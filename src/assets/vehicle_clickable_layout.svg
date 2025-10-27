@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="600" height="300" viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <!-- Car Outline (placeholder) -->
+  <rect x="50" y="50" width="500" height="200" rx="20" ry="20" fill="#f5f5f5" stroke="#000" stroke-width="2"/>
+
+  <!-- Bonnet -->
+  <rect id="bonnet" x="50" y="100" width="80" height="100" fill="#e0e0e0" stroke="#000" stroke-width="1"/>
+
+  <!-- Roof -->
+  <rect id="roof" x="200" y="100" width="200" height="100" fill="#e0e0e0" stroke="#000" stroke-width="1"/>
+
+  <!-- Doors -->
+  <rect id="door-left-front" x="130" y="100" width="40" height="100" fill="#d0eaff" stroke="#000" stroke-width="1"/>
+  <rect id="door-left-rear" x="170" y="100" width="30" height="100" fill="#d0eaff" stroke="#000" stroke-width="1"/>
+  <rect id="door-right-front" x="400" y="100" width="40" height="100" fill="#d0eaff" stroke="#000" stroke-width="1"/>
+  <rect id="door-right-rear" x="440" y="100" width="30" height="100" fill="#d0eaff" stroke="#000" stroke-width="1"/>
+
+  <!-- Bumpers -->
+  <rect id="bumper-front" x="30" y="110" width="20" height="80" fill="#ffcccc" stroke="#000" stroke-width="1"/>
+  <rect id="bumper-rear" x="550" y="110" width="20" height="80" fill="#ffcccc" stroke="#000" stroke-width="1"/>
+
+  <!-- Quarter Panels -->
+  <rect id="quarter-left" x="100" y="100" width="30" height="100" fill="#ccffcc" stroke="#000" stroke-width="1"/>
+  <rect id="quarter-right" x="470" y="100" width="30" height="100" fill="#ccffcc" stroke="#000" stroke-width="1"/>
+
+  <!-- Wheels -->
+  <circle id="wheel-front-left" cx="100" cy="220" r="20" fill="#999" stroke="#000" stroke-width="2"/>
+  <circle id="wheel-rear-left" cx="180" cy="220" r="20" fill="#999" stroke="#000" stroke-width="2"/>
+  <circle id="wheel-front-right" cx="420" cy="220" r="20" fill="#999" stroke="#000" stroke-width="2"/>
+  <circle id="wheel-rear-right" cx="500" cy="220" r="20" fill="#999" stroke="#000" stroke-width="2"/>
+
+  <!-- Windows (simplified) -->
+  <rect id="window-left" x="130" y="80" width="70" height="20" fill="#cce6ff" stroke="#000" stroke-width="1"/>
+  <rect id="window-right" x="400" y="80" width="70" height="20" fill="#cce6ff" stroke="#000" stroke-width="1"/>
+</svg>
