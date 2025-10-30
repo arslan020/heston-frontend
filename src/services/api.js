@@ -175,6 +175,7 @@ setStaffPassword: (id, { password }) =>
   // Appraisals
   createAppraisal: (payload) => post('/api/appraisals', payload),
   updateAppraisal: (id, payload) => put(`/api/appraisals/${id}`, payload),
+  deleteAppraisal: (id) => del(`/api/appraisals/${id}`),
 
   getAllAppraisals: () => get('/api/appraisals/admin'),
   getMyAppraisals: () => get('/api/appraisals/mine'),
