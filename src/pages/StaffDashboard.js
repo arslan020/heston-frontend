@@ -99,6 +99,8 @@ const StaffDashboard = () => {
   const [appraisals, setAppraisals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+// NEW: popup flag for manual entry notice
+const [showManualPopup, setShowManualPopup] = useState(false);
 
   const goTo = (section) => {
     setActiveSection(section);
@@ -237,20 +239,22 @@ const handleFaultPointDelete = (index, type) => {
   const prevStep = () => setCurrentStep(p => Math.max(p - 1, 1));
 
   const startNewAppraisal = () => {
-    setForm(initialForm);
-    setExteriorFaults([]);
-    setInteriorFaults([]);
-    setEditFaultIndex(null);
-    setCurrentStep(1);
-    setActiveSection('start');
-    if (user) {
-      localStorage.removeItem(`currentAppraisalForm_${user.username}`);
-      localStorage.removeItem(`currentExteriorFaults_${user.username}`);
-      localStorage.removeItem(`currentInteriorFaults_${user.username}`);
-      localStorage.removeItem(`currentAppraisalStep_${user.username}`);
-    }
-    setMessage('');
-  };
+  setForm(initialForm);
+  setExteriorFaults([]);
+  setInteriorFaults([]);
+  setEditFaultIndex(null);
+  setCurrentStep(1);
+  setActiveSection('start');
+  setShowManualPopup(false); // NEW: reset the popup
+  if (user) {
+    localStorage.removeItem(`currentAppraisalForm_${user.username}`);
+    localStorage.removeItem(`currentExteriorFaults_${user.username}`);
+    localStorage.removeItem(`currentInteriorFaults_${user.username}`);
+    localStorage.removeItem(`currentAppraisalStep_${user.username}`);
+  }
+  setMessage('');
+};
+
 
   // Load my appraisals from backend (robust filter)
   useEffect(() => {
@@ -295,8 +299,12 @@ const handleFindVehicle = async (e) => {
 
   // Basic UK registration validation
   const ukRegRegex = /^[A-Z0-9]{2,4}\s?[A-Z0-9]{2,3}$/i;
+
+  // ❗ If format is wrong → go to Step 2 (manual) and show popup
   if (!ukRegRegex.test(regTrim)) {
-    setMessage('Invalid registration format — please check again.');
+    setForm(prev => ({ ...prev, reg: regTrim, vin: '' }));
+    setShowManualPopup(true);
+    setCurrentStep(2);
     return;
   }
 
@@ -305,13 +313,16 @@ const handleFindVehicle = async (e) => {
 
   try {
     const data = await api.lookupVehicle(regTrim);
+
+    // ❗ If DVLA returns nothing → go manual
     if (!data || !data.make) {
-      setMessage('Vehicle not found. Please check the registration.');
-      setLoadingVehicle(false);
+      setForm(prev => ({ ...prev, reg: regTrim, vin: '' }));
+      setShowManualPopup(true);
+      setCurrentStep(2);
       return;
     }
 
-    const S = (v) => (v === null || v === undefined ? '' : String(v));
+    const S = (v) => (v == null ? '' : String(v));
     const derivedYear =
       data.yearOfManufacture
         ? S(data.yearOfManufacture)
@@ -349,18 +360,17 @@ const handleFindVehicle = async (e) => {
     }));
 
     setMessage('✅ Vehicle details fetched successfully!');
-    nextStep(); // only move forward if success
+    nextStep(); // proceed as normal
   } catch (err) {
     console.error(err);
-    // Do NOT proceed to next step when lookup fails
-    setMessage('⚠️ Vehicle not found or DVLA API error. Please check the registration.');
-    setForm((prev) => ({ ...prev, vin: '', reg: regTrim }));
+    // ❗ On API error → go manual
+    setForm(prev => ({ ...prev, vin: '', reg: regTrim }));
+    setShowManualPopup(true);
+    setCurrentStep(2);
   } finally {
     setLoadingVehicle(false);
   }
 };
-
- 
 
   const handleAddFault = async (fault, type) => {
     if (fault.photo && fault.photo instanceof File) {
@@ -880,14 +890,24 @@ const handleFinalSubmit = async () => {
     setPdfLoading(false);
   };
 
-  const deleteAppraisal = (i) => {
-    if (!window.confirm('Are you sure you want to delete this appraisal?')) return;
-    const updated = [...appraisals];
-    updated.splice(i, 1);
-    localStorage.setItem(`appraisals_${user.username}`, JSON.stringify(updated));
-    setAppraisals(updated);
-    setMessage('✅ Appraisal deleted successfully!');
-  };
+ const deleteAppraisal = async (i) => {
+   const a = appraisals[i];
+   if (!a || !a._id) {
+     setMessage('❌ Cannot delete: missing appraisal ID.');
+     return;
+   }
+   if (!window.confirm(`Delete appraisal ${a.reg || ''}?`)) return;
+   try {
+     await api.deleteAppraisal(a._id);
+     const updated = appraisals.filter((_, idx) => idx !== i);
+     setAppraisals(updated);
+     if (user) localStorage.setItem(`appraisals_${user.username}`, JSON.stringify(updated));
+     setMessage('✅ Deleted from server.');
+   } catch (err) {
+     console.error('deleteAppraisal failed', err);
+     setMessage('❌ Server delete failed.');
+   }
+ };
 
   const handleSearch = () => {
     const query = searchQuery.trim().toLowerCase();
@@ -1228,10 +1248,10 @@ useEffect(() => {
 )}
 
 
-              {currentStep === 2 && (
+{currentStep === 2 && (
                 <>
                    {/* === Step 2: Vehicle Details (editable) === */}
-<div className="sd2-wrap">
+   <div className="sd2-wrap">
   <div className="card">
     <div className="card-head">
       <span>🚘</span>
@@ -1459,15 +1479,41 @@ useEffect(() => {
     </div>
   </div>
 
-  {/* Sticky actions */}
+ {/* Sticky actions */}
   <div className="sticky-actions">
     <button type="button" className="btn btn-ghost" onClick={prevStep}>Previous</button>
     <button type="button" className="btn btn-primary" onClick={nextStep}>Next Step</button>
   </div>
 </div>
 
-                </>
-              )}
+{/* 🔽 POPUP yahin add karein — Step 2 ke andar hi 🔽 */}
+{showManualPopup && (
+  <div
+    className="sub-part-backdrop"
+    onClick={() => setShowManualPopup(false)}
+  >
+    <div
+      className="sub-part-popup"
+      onClick={(e) => e.stopPropagation()}
+      style={{ maxWidth: 420, textAlign: 'center' }}
+    >
+      <h4 style={{ marginBottom: 10 }}>DVLA Lookup Failed</h4>
+      <p style={{ marginBottom: 16 }}>
+        No data was found from DVLA. Please enter the vehicle details manually below.
+      </p>
+      <button
+        className="btn btn-primary"
+        onClick={() => setShowManualPopup(false)}
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
+{/* 🔼 POPUP end 🔼 */}
+
+ </>
+)}
 
               {currentStep === 3 && (
   <>
